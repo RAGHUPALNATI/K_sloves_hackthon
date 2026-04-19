@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+audit_log.jsonl
+shopwave_agent.log
+*.log
+
+# Project specific
+data/tickets_history.json
+run_summary.json
+architecture.png
+*.env
+audit_log.json
+shopwave_agent_api.log
+*.pyc
+.venv/

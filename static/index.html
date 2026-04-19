@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ShopWave — Autonomous Support Agent</title>
+<style>
+  :root {
+    --bg:#0d1117;--s1:#161b22;--s2:#21262d;--bd:#30363d;
+    --tx:#e6edf3;--mu:#8b949e;--tx2:#c9d1d9;
+    --green:#3fb950;--yellow:#d29922;--red:#f85149;
+    --blue:#58a6ff;--purple:#bc8cff;--orange:#ffa657;--teal:#39d0b5;
+    --gbg:rgba(63,185,80,.12);--ybg:rgba(210,153,34,.12);
+    --rbg:rgba(248,81,73,.12);--bbg:rgba(88,166,255,.12);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
+  .header{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 24px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+  .logo{font-size:18px;font-weight:700;color:var(--blue)}.logo span{color:var(--tx)}
+  .vbadge{font-size:10px;font-weight:700;background:#238636;color:#fff;padding:2px 8px;border-radius:12px;text-transform:uppercase}
+  .hright{margin-left:auto;display:flex;align-items:center;gap:16px}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:ping 2s infinite}
+  @keyframes ping{0%,100%{box-shadow:0 0 0 0 rgba(63,185,80,.5)}50%{box-shadow:0 0 0 5px rgba(63,185,80,0)}}
+  #hdr-status{font-size:12px;color:var(--mu)}
+  #hdr-provider{font-size:11px;color:var(--mu);background:var(--s2);border:1px solid var(--bd);padding:2px 10px;border-radius:20px}
+  .page{max-width:1440px;margin:0 auto;padding:20px 24px}
+
+  /* STAT CARDS */
+  .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+  .sc{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:14px 16px}
+  .sc-label{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+  .sc-val{font-size:26px;font-weight:700;line-height:1}
+  .sc-sub{font-size:10px;color:var(--mu);margin-top:3px}
+  .cb{color:var(--blue)}.cg{color:var(--green)}.cr{color:var(--red)}.cy{color:var(--yellow)}.cp{color:var(--purple)}.ct{color:var(--teal)}
+
+  /* RESOLUTION BANNER */
+  .res-banner{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+  .rb{border-radius:8px;padding:14px 18px;border:1px solid;display:flex;align-items:center;gap:14px}
+  .rb.resolved{background:var(--gbg);border-color:rgba(63,185,80,.3)}
+  .rb.escalated{background:var(--ybg);border-color:rgba(210,153,34,.3)}
+  .rb.fraud{background:var(--rbg);border-color:rgba(248,81,73,.3)}
+  .rb-icon{font-size:26px;line-height:1;flex-shrink:0}
+  .rb-count{font-size:26px;font-weight:700}
+  .rb.resolved .rb-count{color:var(--green)}.rb.escalated .rb-count{color:var(--yellow)}.rb.fraud .rb-count{color:var(--red)}
+  .rb-label{font-size:11px;color:var(--mu);margin-top:3px;line-height:1.4}
+
+  /* CONTROLS */
+  .controls{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+  .btn{padding:7px 16px;border-radius:6px;border:1px solid var(--bd);font-size:13px;font-weight:600;cursor:pointer;background:var(--s2);color:var(--tx);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+  .btn:hover{border-color:var(--blue);color:var(--blue)}
+  .btn-run{background:#238636;border-color:#238636;color:#fff}
+  .btn-run:hover{background:#2ea043;color:#fff;border-color:#2ea043}
+  .btn-run:disabled{opacity:.5;cursor:not-allowed}
+  .search-box{flex:1;min-width:180px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:7px 14px;font-size:13px}
+  .search-box:focus{outline:none;border-color:var(--blue)}
+  .filter-sel{background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer}
+
+  /* PROGRESS */
+  .prog-wrap{margin-bottom:14px;display:none}
+  .prog-hdr{font-size:12px;color:var(--mu);display:flex;justify-content:space-between;margin-bottom:5px}
+  .prog-track{height:6px;background:var(--s2);border-radius:3px;overflow:hidden}
+  .prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:3px;transition:width .5s;width:0}
+
+  /* TABLE */
+  .tbl-wrap{background:var(--s1);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  col.ct1{width:90px}col.ct2{width:155px}col.ct3{width:68px}
+  col.ct4{width:148px}col.ct5{width:128px}col.ct6{width:122px}
+  col.ct7{width:108px}col.ct8{width:52px}col.ct9{width:70px}
+  th{background:var(--s2);padding:9px 12px;text-align:left;font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);font-weight:600;white-space:nowrap}
+  td{padding:10px 12px;border-bottom:1px solid var(--bd);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  tr:last-child td{border-bottom:none}
+  tr.trh:hover{background:var(--s2);cursor:pointer}
+  tr.tr-fraud td{background:rgba(248,81,73,.04)}
+  tr.tr-fraud:hover td{background:rgba(248,81,73,.08)}
+
+  /* RESOLUTION STATUS */
+  .rs{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+  .rs-ok{background:var(--gbg);color:var(--green);border:1px solid rgba(63,185,80,.3)}
+  .rs-esc{background:var(--ybg);color:var(--yellow);border:1px solid rgba(210,153,34,.3)}
+  .rs-fraud{background:var(--rbg);color:var(--red);border:1px solid rgba(248,81,73,.3)}
+  .rs-proc{background:var(--bbg);color:var(--blue);border:1px solid rgba(88,166,255,.3)}
+  .rs-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .rs-ok .rs-dot{background:var(--green)}
+  .rs-esc .rs-dot{background:var(--yellow)}
+  .rs-fraud .rs-dot{background:var(--red);animation:pd .8s infinite}
+  .rs-proc .rs-dot{background:var(--blue);animation:pd .8s infinite}
+  @keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
+
+  /* PILLS */
+  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;white-space:nowrap}
+  .pb{background:var(--bbg);color:var(--blue)}.pg{background:var(--gbg);color:var(--green)}
+  .pr{background:var(--rbg);color:var(--red)}.py{background:var(--ybg);color:var(--yellow)}
+  .pp{background:rgba(188,140,255,.12);color:var(--purple)}
+  .po{background:rgba(255,166,87,.12);color:var(--orange)}
+  .pmu{background:var(--s2);color:var(--mu);border:1px solid var(--bd)}
+  .pt{background:rgba(57,208,181,.12);color:var(--teal)}
+
+  /* CONF BAR */
+  .cbar{display:flex;align-items:center;gap:6px}
+  .ctrack{flex:1;height:4px;background:var(--s2);border-radius:2px;min-width:40px}
+  .cfill{height:100%;border-radius:2px;transition:width .5s}
+  .cpct{font-size:11px;color:var(--mu);min-width:26px;text-align:right}
+
+  /* EMPTY */
+  .empty{text-align:center;padding:56px 20px;color:var(--mu)}
+  .ei{font-size:44px;margin-bottom:12px;display:block}
+  .et{font-size:15px;font-weight:600;color:var(--tx2);margin-bottom:5px}
+  .es{font-size:13px}
+
+  /* MODAL */
+  .mback{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center;padding:20px}
+  .mback.open{display:flex}
+  .mbox{background:var(--s1);border:1px solid var(--bd);border-radius:12px;width:700px;max-width:100%;max-height:90vh;overflow:auto}
+  .mhdr{padding:18px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+  .mtitle{font-size:15px;font-weight:700}
+  .msub{font-size:12px;color:var(--mu);margin-top:3px}
+  .mclose{background:none;border:none;color:var(--mu);font-size:20px;cursor:pointer;padding:0;line-height:1}
+  .mclose:hover{color:var(--tx)}
+  .mbody{padding:0 20px 20px}
+
+  /* VERDICT BANNER */
+  .vbanner{border-radius:8px;padding:14px 16px;margin-bottom:16px;border:1px solid;display:flex;align-items:flex-start;gap:12px}
+  .vbanner.resolved{background:var(--gbg);border-color:rgba(63,185,80,.3)}
+  .vbanner.escalated{background:var(--ybg);border-color:rgba(210,153,34,.3)}
+  .vbanner.fraud{background:var(--rbg);border-color:rgba(248,81,73,.3)}
+  .vbanner.processing{background:var(--bbg);border-color:rgba(88,166,255,.3)}
+  .vicon{font-size:22px;flex-shrink:0;margin-top:1px}
+  .vtitle{font-size:13px;font-weight:700}
+  .vdesc{font-size:12px;color:var(--mu);margin-top:3px;line-height:1.5}
+
+  /* REPLY BOX */
+  .reply-box{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:16px}
+  .rlabel{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+  .rtext{font-size:13px;color:var(--tx2);line-height:1.6;white-space:pre-wrap}
+
+  /* DETAIL GRID */
+  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .di{background:var(--s2);border-radius:6px;padding:10px 12px}
+  .dlabel{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+  .dval{font-size:13px;font-weight:500}
+
+  /* TIMELINE */
+  .tl-sec{margin-top:4px}
+  .tl-hdr{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
+  .tl-item{display:flex;gap:10px;padding-bottom:12px;position:relative}
+  .tl-item:not(:last-child)::after{content:'';position:absolute;left:11px;top:24px;bottom:0;width:1px;background:var(--bd)}
+  .tl-dot{width:22px;height:22px;border-radius:50%;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;color:var(--mu);z-index:1}
+  .tl-dot.done{background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.4);color:var(--green)}
+  .tl-dot.fraud{background:var(--rbg);border-color:rgba(248,81,73,.4);color:var(--red)}
+  .tl-dot.skip{background:transparent;border-color:var(--s2);color:var(--bd)}
+  .tl-node{font-size:12px;font-weight:600}
+  .tl-detail{font-size:11px;color:var(--mu);margin-top:2px;line-height:1.5}
+
+  /* SUBMIT PANEL */
+  .spanel{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:16px 20px;margin-bottom:16px;display:none}
+  .sptitle{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:12px}
+  .sprow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .spinput{background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:8px 12px;font-size:13px;width:100%}
+  .spinput:focus{outline:none;border-color:var(--blue)}
+  textarea.spinput{height:76px;resize:vertical}
+
+  @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+  .rnew{animation:fi .3s ease}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--bd);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🌊 Shop<span>Wave</span></div>
+  <div class="vbadge">Autonomous Agent v2</div>
+  <span id="hdr-provider">Loading…</span>
+  <div class="hright">
+    <div class="live-dot"></div>
+    <span id="hdr-status">Connecting…</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="stats-row">
+    <div class="sc"><div class="sc-label">Total processed</div><div class="sc-val cb" id="s-total">—</div><div class="sc-sub">tickets handled</div></div>
+    <div class="sc"><div class="sc-label">Auto-resolved</div><div class="sc-val cg" id="s-resolved">—</div><div class="sc-sub">agent took action</div></div>
+    <div class="sc"><div class="sc-label">Escalated</div><div class="sc-val cy" id="s-escalated">—</div><div class="sc-sub">to human queue</div></div>
+    <div class="sc"><div class="sc-label">Refunds issued</div><div class="sc-val cp" id="s-refunds">—</div><div class="sc-sub">payments processed</div></div>
+    <div class="sc"><div class="sc-label">Fraud caught</div><div class="sc-val cr" id="s-fraud">—</div><div class="sc-sub">blocked &amp; flagged</div></div>
+    <div class="sc"><div class="sc-label">Avg response</div><div class="sc-val ct" id="s-avg">—</div><div class="sc-sub">per ticket</div></div>
+  </div>
+
+  <!-- BIG RESOLUTION SUMMARY — inspector sees this immediately -->
+  <div class="res-banner">
+    <div class="rb resolved">
+      <div class="rb-icon">✅</div>
+      <div>
+        <div class="rb-count" id="rb-ok">0</div>
+        <div class="rb-label">TICKETS RESOLVED — agent issued refund, cancelled order, sent reply, or approved return without human involvement</div>
+      </div>
+    </div>
+    <div class="rb escalated">
+      <div class="rb-icon">⬆️</div>
+      <div>
+        <div class="rb-count" id="rb-esc">0</div>
+        <div class="rb-label">ESCALATED TO HUMAN — warranty claims, large refunds ($200+), borderline cases, or ambiguous tickets</div>
+      </div>
+    </div>
+    <div class="rb fraud">
+      <div class="rb-icon">🚨</div>
+      <div>
+        <div class="rb-count" id="rb-fraud">0</div>
+        <div class="rb-label">FRAUD DETECTED — social engineering or false tier claims caught and blocked by guard rail</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="prog-wrap" id="prog-wrap">
+    <div class="prog-hdr"><span id="prog-text">Processing…</span><span id="prog-pct">0%</span></div>
+    <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-run" id="btn-run" onclick="startBatch()">▶ Run All 20 Tickets</button>
+    <button class="btn" onclick="loadHistory()">↻ Refresh</button>
+    <button class="btn" onclick="toggleSubmit()">＋ New Ticket</button>
+    <input class="search-box" id="search" placeholder="Search ticket, customer, intent, decision…" oninput="filterRows()"/>
+    <select class="filter-sel" id="filt" onchange="filterRows()">
+      <option value="">All statuses</option>
+      <option value="resolved">Resolved</option>
+      <option value="escalated">Escalated</option>
+      <option value="fraud">Fraud caught</option>
+      <option value="processing">Processing</option>
+    </select>
+    <a href="/audit-export" class="btn" style="text-decoration:none">⬇ Audit</a>
+  </div>
+
+  <div class="spanel" id="spanel">
+    <div class="sptitle">Submit a live ticket</div>
+    <div class="sprow">
+      <input class="spinput" id="f-email" placeholder="customer@email.com"/>
+      <input class="spinput" id="f-subject" placeholder="Subject line"/>
+    </div>
+    <textarea class="spinput" id="f-body" placeholder="Ticket body…"></textarea>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn btn-run" onclick="submitTicket()">Submit</button>
+      <button class="btn" onclick="toggleSubmit()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <colgroup>
+        <col class="ct1"/><col class="ct2"/><col class="ct3"/>
+        <col class="ct4"/><col class="ct5"/><col class="ct6"/>
+        <col class="ct7"/><col class="ct8"/><col class="ct9"/>
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Ticket</th><th>Customer</th><th>Tier</th>
+          <th>Intent</th><th>Decision</th>
+          <th title="Was the ticket resolved, escalated, or fraud caught?">Resolution ⬤</th>
+          <th>Confidence</th><th title="Number of tool calls made">Tools</th><th>Time</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="9">
+          <div class="empty">
+            <span class="ei">🤖</span>
+            <div class="et">No tickets processed yet</div>
+            <div class="es">Click <strong>Run All 20 Tickets</strong> to start. Each row will show a coloured resolution status once done.</div>
+          </div>
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="mback" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="mbox">
+    <div class="mhdr">
+      <div><div class="mtitle" id="mtitle">Detail</div><div class="msub" id="msub"></div></div>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody" id="mbody"><div style="padding:40px;text-align:center"><span class="spinner"></span></div></div>
+  </div>
+</div>
+
+<script>
+let allRows = [];
+let batchInt = null;
+
+window.addEventListener('load', async () => {
+  await ping();
+  await loadStats();
+  await loadHistory();
+  setInterval(() => { loadStats(); loadHistory(); }, 5000);
+});
+
+async function ping() {
+  try {
+    const d = await api('/health');
+    document.getElementById('hdr-status').textContent = 'Online';
+    document.getElementById('hdr-provider').textContent = (d.llm_provider||'ollama') + ' · concurrency=' + (d.concurrent_limit||1);
+  } catch { document.getElementById('hdr-status').textContent = 'Server offline'; }
+}
+
+async function loadStats() {
+  try {
+    const d = await api('/stats');
+    set('s-total',     d.total_processed || 0);
+    set('s-resolved',  d.resolved_count  || 0);
+    set('s-escalated', d.escalated_count || 0);
+    set('s-refunds',   d.refunds_issued  || 0);
+    set('s-fraud',     d.fraud_count     || 0);
+    set('s-avg',       d.avg_ms ? d.avg_ms+'ms' : '—');
+    set('rb-ok',    d.resolved_count  || 0);
+    set('rb-esc',   d.escalated_count || 0);
+    set('rb-fraud', d.fraud_count     || 0);
+  } catch {}
+}
+
+async function startBatch() {
+  const btn = document.getElementById('btn-run');
+  btn.disabled = true; btn.textContent = '⏳ Running…';
+  document.getElementById('prog-wrap').style.display = 'block';
+  try {
+    await api('/batch', {method:'POST'});
+    batchInt = setInterval(pollBatch, 2000);
+  } catch { btn.disabled = false; btn.textContent = '▶ Run All 20 Tickets'; }
+}
+
+async function pollBatch() {
+  try {
+    const d = await api('/batch-status');
+    const pct = d.total > 0 ? Math.round(d.completed/d.total*100) : 0;
+    document.getElementById('prog-fill').style.width = pct+'%';
+    document.getElementById('prog-pct').textContent = pct+'%';
+    document.getElementById('prog-text').textContent = `Processing… ${d.completed}/${d.total}`;
+    await loadHistory(); await loadStats();
+    if (!d.running) {
+      clearInterval(batchInt);
+      const btn = document.getElementById('btn-run');
+      btn.disabled = false; btn.textContent = '▶ Run Again';
+      set('prog-text', `All ${d.total} tickets done`);
+    }
+  } catch {}
+}
+
+async function loadHistory() {
+  try { allRows = await api('/tickets-history'); renderTable(allRows); } catch {}
+}
+
+function cat(t) {
+  if (t.fraud_flag) return 'fraud';
+  if (t.status === 'escalated') return 'escalated';
+  if (t.status === 'resolved')  return 'resolved';
+  return 'processing';
+}
+
+function filterRows() {
+  const q  = document.getElementById('search').value.toLowerCase();
+  const sf = document.getElementById('filt').value;
+  const rows = allRows.filter(t => {
+    const mq = !q || [t.ticket_id,t.customer,t.intent,t.decision,t.status].some(v=>(v||'').toLowerCase().includes(q));
+    const ms = !sf || cat(t) === sf;
+    return mq && ms;
+  });
+  renderTable(rows);
+}
+
+function renderTable(rows) {
+  const tb = document.getElementById('tbody');
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="9"><div class="empty"><span class="ei">📭</span><div class="et">No matching tickets</div></div></td></tr>`;
+    return;
+  }
+  tb.innerHTML = rows.map(t => {
+    const c = cat(t); const isP = c==='processing';
+    const conf = parseFloat(t.confidence||0);
+    const pct  = Math.round(conf*100);
+    const cc   = conf>=0.85?'var(--green)':conf>=0.7?'var(--yellow)':'var(--red)';
+    return `<tr class="trh rnew${t.fraud_flag?' tr-fraud':''}" onclick="showDetail('${t.ticket_id}')">
+      <td><strong style="font-size:12px">${t.ticket_id}</strong></td>
+      <td title="${t.customer||''}">${t.customer||'<span style="color:var(--mu)">Unknown</span>'}</td>
+      <td>${tierBadge(t.tier)}</td>
+      <td>${intentBadge(t.intent)}</td>
+      <td>${decBadge(t.decision)}</td>
+      <td>${resBadge(t)}</td>
+      <td>${isP?`<span class="spinner"></span>`:`<div class="cbar"><div class="ctrack"><div class="cfill" style="width:${pct}%;background:${cc}"></div></div><span class="cpct">${pct}%</span></div>`}</td>
+      <td style="color:var(--mu);font-size:12px;text-align:center">${t.tool_call_count||0}</td>
+      <td style="color:var(--mu);font-size:12px">${t.total_ms?t.total_ms.toLocaleString()+'ms':isP?'<span class="spinner"></span>':'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function resBadge(t) {
+  const c = cat(t);
+  if (c==='resolved')  return `<span class="rs rs-ok"><span class="rs-dot"></span>Resolved</span>`;
+  if (c==='fraud')     return `<span class="rs rs-fraud"><span class="rs-dot"></span>Fraud caught</span>`;
+  if (c==='escalated') return `<span class="rs rs-esc"><span class="rs-dot"></span>Escalated</span>`;
+  return `<span class="rs rs-proc"><span class="rs-dot"></span>Processing…</span>`;
+}
+
+function tierBadge(t) {
+  const label = t==='1'||t==='standard'?'standard':t==='2'||t==='premium'?'premium':t==='3'||t==='vip'?'vip':(t||'std');
+  const cls   = label==='vip'?'pp':label==='premium'?'pb':'pmu';
+  return t?`<span class="pill ${cls}" style="font-size:9px">${label}</span>`:'—';
+}
+
+function intentBadge(i) {
+  if (!i||i==='—') return '—';
+  const m={refund_request:'pr',return_request:'po',order_cancellation:'py',fraud_report:'pr',
+    billing_issue:'pp',order_status:'pb',product_question:'pt',warranty_claim:'po',
+    exchange_request:'pt',general_complaint:'pmu',general_question:'pmu',other:'pmu'};
+  return `<span class="pill ${m[i]||'pmu'}" style="font-size:9px">${i.replace(/_/g,' ')}</span>`;
+}
+
+function decBadge(d) {
+  if (!d||d==='—') return '—';
+  const m={issue_refund:['pg','💰 Refund'],approve_return:['pb','📦 Return'],deny:['pr','✗ Deny'],
+    cancel_order:['po','✕ Cancel'],send_reply:['pb','💬 Reply'],
+    request_info:['pp','? Info'],escalate:['py','⬆ Escalate']};
+  const [cls,label]=m[d]||['pmu',d.replace(/_/g,' ')];
+  return `<span class="pill ${cls}">${label}</span>`;
+}
+
+/* MODAL */
+async function showDetail(id) {
+  document.getElementById('mtitle').textContent = id;
+  document.getElementById('msub').textContent = 'Loading…';
+  document.getElementById('mbody').innerHTML = '<div style="padding:40px;text-align:center"><span class="spinner"></span></div>';
+  document.getElementById('modal').classList.add('open');
+  try {
+    const [s, detail] = await Promise.all([api('/ticket-status/'+id), api('/ticket-detail/'+id)]);
+    const c = s.fraud_flag?'fraud':s.status==='escalated'?'escalated':s.status==='resolved'?'resolved':'processing';
+    const vmap = {
+      resolved:  {icon:'✅',title:'Ticket resolved — agent took action',desc:resolveDesc(s),cls:'resolved'},
+      escalated: {icon:'⬆️',title:'Escalated to human agent',desc:s.escalation_reason||'Requires human review',cls:'escalated'},
+      fraud:     {icon:'🚨',title:'Fraud / social engineering blocked',desc:s.fraud_reason||'False claims detected',cls:'fraud'},
+      processing:{icon:'⏳',title:'Currently processing…',desc:'Agent is working through the pipeline',cls:'processing'},
+    };
+    const v = vmap[c];
+    document.getElementById('mtitle').textContent = `${id} — ${s.customer_name||'Unknown'}`;
+    document.getElementById('msub').textContent   = s.intent?s.intent.replace(/_/g,' '):'';
+    const conf = parseFloat(s.confidence||0);
+    const pct  = Math.round(conf*100);
+    const cc   = conf>=0.85?'var(--green)':conf>=0.7?'var(--yellow)':'var(--red)';
+    const events = detail.events||[];
+    const ev = events.find(e=>e.event==='ticket_complete')||{};
+    const replyText = s.reply||ev.reply_draft||'';
+
+    document.getElementById('mbody').innerHTML = `
+      <div class="vbanner ${v.cls}">
+        <div class="vicon">${v.icon}</div>
+        <div><div class="vtitle">${v.title}</div><div class="vdesc">${esc(v.desc)}</div></div>
+      </div>
+      ${replyText?`<div class="reply-box"><div class="rlabel">📧 Reply sent to customer</div><div class="rtext">${esc(replyText)}</div></div>`:''}
+      <div class="dgrid">
+        <div class="di"><div class="dlabel">Customer</div><div class="dval">${s.customer_name||'Unknown'}</div></div>
+        <div class="di"><div class="dlabel">Tier</div><div class="dval">${tierBadge(s.customer_tier)}</div></div>
+        <div class="di"><div class="dlabel">Decision</div><div class="dval">${decBadge(s.decision)}</div></div>
+        <div class="di"><div class="dlabel">Confidence</div><div class="dval">
+          <div class="cbar"><div class="ctrack" style="min-width:70px"><div class="cfill" style="width:${pct}%;background:${cc}"></div></div><span class="cpct">${pct}%</span></div>
+        </div></div>
+        <div class="di"><div class="dlabel">Action taken</div><div class="dval">${(s.action_taken||'—').replace(/_/g,' ')}</div></div>
+        <div class="di"><div class="dlabel">Tool calls</div><div class="dval">${s.tool_calls||ev.tool_call_count||0}</div></div>
+        ${s.refund_id?`<div class="di"><div class="dlabel">Refund ID</div><div class="dval" style="color:var(--green)">${s.refund_id}</div></div>`:''}
+        ${s.urgency?`<div class="di"><div class="dlabel">Urgency</div><div class="dval">${urgBadge(s.urgency)}</div></div>`:''}
+        ${s.fraud_flag?`<div class="di" style="grid-column:1/-1;background:var(--rbg)"><div class="dlabel">🚨 Fraud reason</div><div class="dval" style="color:var(--red)">${esc(s.fraud_reason||'Social engineering detected')}</div></div>`:''}
+        ${c==='escalated'?`<div class="di" style="grid-column:1/-1"><div class="dlabel">Escalation reason</div><div class="dval" style="color:var(--yellow)">${esc(s.escalation_reason||'—')}</div></div>`:''}
+      </div>
+      <div class="tl-sec"><div class="tl-hdr">Pipeline trace</div>${buildTL(events,c,ev)}</div>
+    `;
+  } catch(e) {
+    document.getElementById('mbody').innerHTML = `<div style="color:var(--red);padding:20px">Error: ${e.message}</div>`;
+  }
+}
+
+function resolveDesc(s) {
+  const m = {
+    issue_refund:`Refund${s.refund_id?' '+s.refund_id:''} issued to original payment method`,
+    approve_return:'Return approved — RMA instructions sent to customer',
+    deny:'Request denied per policy — explanation and alternatives sent to customer',
+    cancel_order:'Order cancelled — confirmation sent to customer',
+    send_reply:'Query answered from knowledge base — reply sent',
+    request_info:'Clarifying questions sent — awaiting customer response',
+  };
+  return m[s.decision] || (s.action_taken||'Agent completed processing').replace(/_/g,' ');
+}
+
+function buildTL(events, c, ev) {
+  const NODES = ['ingest_ticket','lookup_customer','classify_intent','lookup_order_product','check_policy','decide','act','log_outcome'];
+  if (!events.length) return '<div style="color:var(--mu);font-size:12px">No events yet.</div>';
+  const emap = {};
+  events.forEach(e=>{ if(e.event) emap[e.event]=e; });
+  const shortCircuit = !!emap['customer_not_found'];
+
+  return NODES.map((node,i) => {
+    const skipped = shortCircuit && ['classify_intent','lookup_order_product','check_policy','decide'].includes(node);
+    const isFraud = node==='check_policy' && (emap['fraud_detected']||c==='fraud');
+    const dotCls  = skipped?'skip':isFraud?'fraud':'done';
+    let detail = '';
+    if (node==='ingest_ticket')        detail = 'Order IDs extracted, urgency pre-scanned';
+    else if (node==='lookup_customer') detail = ev.customer_name ? `${ev.customer_name} · tier=${ev.customer_tier||'?'}` : shortCircuit?'Unknown customer — short-circuit triggered':'Customer found';
+    else if (node==='classify_intent') detail = skipped?'SKIPPED (unknown customer)':ev.intent?`intent=${ev.intent} · urgency=${ev.urgency||'?'}`:'Classified';
+    else if (node==='lookup_order_product') detail = skipped?'SKIPPED':ev.customer_name?'Order and product fetched':'Lookup attempted';
+    else if (node==='check_policy')    detail = isFraud?`FRAUD DETECTED: ${emap['fraud_detected']?.reason||'false tier claims'}`:skipped?'SKIPPED':'Policy KB searched';
+    else if (node==='decide')          detail = skipped?'SKIPPED — auto-escalate':ev.decision?`decision=${ev.decision} · conf=${Math.round((ev.confidence_score||0)*100)}%`:'Decision made';
+    else if (node==='act')             detail = ev.refund_id?`Refund ${ev.refund_id} issued`:(ev.action_taken||'action taken').replace(/_/g,' ')+' · reply sent';
+    else if (node==='log_outcome')     detail = ev.tool_call_count!==undefined?`${ev.tool_call_count} tool calls · ${ev.total_ms||0}ms total`:'Audit log written';
+
+    return `<div class="tl-item">
+      <div class="tl-dot ${dotCls}">${skipped?'—':(i+1)}</div>
+      <div style="flex:1;padding-top:2px">
+        <div class="tl-node" style="${skipped?'color:var(--bd)':''}${isFraud?';color:var(--red)':''}">${node}</div>
+        ${detail?`<div class="tl-detail" style="${isFraud?'color:var(--red)':''}">${detail}</div>`:''
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+/* SUBMIT */
+function toggleSubmit() {
+  const p = document.getElementById('spanel');
+  p.style.display = p.style.display==='none'?'block':'none';
+}
+async function submitTicket() {
+  const email   = document.getElementById('f-email').value.trim();
+  const subject = document.getElementById('f-subject').value.trim();
+  const body    = document.getElementById('f-body').value.trim();
+  if (!subject||!body) { alert('Subject and body required.'); return; }
+  try {
+    const d = await api('/ticket', {method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({customer_email:email,subject,body})});
+    alert(`Ticket ${d.ticket_id} submitted!`);
+    document.getElementById('f-email').value=''; document.getElementById('f-subject').value=''; document.getElementById('f-body').value='';
+    toggleSubmit(); setTimeout(loadHistory,3000);
+  } catch(e){ alert('Error: '+e.message); }
+}
+
+/* UTIL */
+function urgBadge(u) {
+  const m={critical:'pr',high:'po',medium:'py',low:'pmu'};
+  return u?`<span class="pill ${m[u]||'pmu'}">${u}</span>`:'—';
+}
+async function api(url, opts={}) {
+  const r = await fetch(url,opts);
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
+}
+function set(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

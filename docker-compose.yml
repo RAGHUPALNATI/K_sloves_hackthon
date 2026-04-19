@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  # Mode 1: Run the interactive, dynamic Webhook API Server (Listening on port 8000)
+  server:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - LLM_PROVIDER=ollama
+      - OLLAMA_MODEL=llama3.2
+      # special docker DNS host to reach local natively installed Ollama
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    profiles: ["server"]
+    command: ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
+
+  # Mode 2: Run the batch processor against all 20 tickets instantly and exit.
+  batch:
+    build: .
+    environment:
+      - LLM_PROVIDER=ollama
+      - OLLAMA_MODEL=llama3.2
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+    profiles: ["batch"]
+    command: ["python", "main.py"]
