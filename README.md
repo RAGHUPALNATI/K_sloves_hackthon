@@ -6,6 +6,15 @@ A production-grade autonomous agent that resolves e-commerce support tickets end
 
 ---
 
+
+
+
+## 🎥 Demo Video
+
+[![ShopWave Demo](https://img.shields.io/badge/▶%20Watch%20Demo-Google%20Drive-blue?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1tNeCfdayiNIlBv0LkVufpOaTq3kRCag8/view?usp=sharing)
+
+> Click the button above to watch the full 5-minute demo of the ShopWave Autonomous Support Agent processing all 20 tickets live.
+
 ## Architecture in 3 Sentences
 
 Every ticket flows through an **8-node LangGraph pipeline**: ingest → customer lookup → intent classification → order/product lookup → policy check → decision → action → audit. The agent makes a minimum of **3 tool calls per ticket** and reasons explicitly at each step before acting. All 20 tickets are processed **concurrently** using `asyncio.Semaphore`, with a real-time dashboard at `localhost:8000`.
