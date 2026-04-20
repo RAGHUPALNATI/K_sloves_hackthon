@@ -4,557 +4,270 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ShopWave — Autonomous Support Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
-  :root {
-    --bg:#0d1117;--s1:#161b22;--s2:#21262d;--bd:#30363d;
-    --tx:#e6edf3;--mu:#8b949e;--tx2:#c9d1d9;
-    --green:#3fb950;--yellow:#d29922;--red:#f85149;
-    --blue:#58a6ff;--purple:#bc8cff;--orange:#ffa657;--teal:#39d0b5;
-    --gbg:rgba(63,185,80,.12);--ybg:rgba(210,153,34,.12);
-    --rbg:rgba(248,81,73,.12);--bbg:rgba(88,166,255,.12);
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);font-size:14px}
-  .header{background:var(--s1);border-bottom:1px solid var(--bd);padding:0 24px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
-  .logo{font-size:18px;font-weight:700;color:var(--blue)}.logo span{color:var(--tx)}
-  .vbadge{font-size:10px;font-weight:700;background:#238636;color:#fff;padding:2px 8px;border-radius:12px;text-transform:uppercase}
-  .hright{margin-left:auto;display:flex;align-items:center;gap:16px}
-  .live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:ping 2s infinite}
-  @keyframes ping{0%,100%{box-shadow:0 0 0 0 rgba(63,185,80,.5)}50%{box-shadow:0 0 0 5px rgba(63,185,80,0)}}
-  #hdr-status{font-size:12px;color:var(--mu)}
-  #hdr-provider{font-size:11px;color:var(--mu);background:var(--s2);border:1px solid var(--bd);padding:2px 10px;border-radius:20px}
-  .page{max-width:1440px;margin:0 auto;padding:20px 24px}
-
-  /* STAT CARDS */
-  .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
-  .sc{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:14px 16px}
-  .sc-label{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-  .sc-val{font-size:26px;font-weight:700;line-height:1}
-  .sc-sub{font-size:10px;color:var(--mu);margin-top:3px}
-  .cb{color:var(--blue)}.cg{color:var(--green)}.cr{color:var(--red)}.cy{color:var(--yellow)}.cp{color:var(--purple)}.ct{color:var(--teal)}
-
-  /* RESOLUTION BANNER */
-  .res-banner{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px}
-  .rb{border-radius:8px;padding:14px 18px;border:1px solid;display:flex;align-items:center;gap:14px}
-  .rb.resolved{background:var(--gbg);border-color:rgba(63,185,80,.3)}
-  .rb.escalated{background:var(--ybg);border-color:rgba(210,153,34,.3)}
-  .rb.fraud{background:var(--rbg);border-color:rgba(248,81,73,.3)}
-  .rb-icon{font-size:26px;line-height:1;flex-shrink:0}
-  .rb-count{font-size:26px;font-weight:700}
-  .rb.resolved .rb-count{color:var(--green)}.rb.escalated .rb-count{color:var(--yellow)}.rb.fraud .rb-count{color:var(--red)}
-  .rb-label{font-size:11px;color:var(--mu);margin-top:3px;line-height:1.4}
-
-  /* CONTROLS */
-  .controls{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
-  .btn{padding:7px 16px;border-radius:6px;border:1px solid var(--bd);font-size:13px;font-weight:600;cursor:pointer;background:var(--s2);color:var(--tx);transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
-  .btn:hover{border-color:var(--blue);color:var(--blue)}
-  .btn-run{background:#238636;border-color:#238636;color:#fff}
-  .btn-run:hover{background:#2ea043;color:#fff;border-color:#2ea043}
-  .btn-run:disabled{opacity:.5;cursor:not-allowed}
-  .search-box{flex:1;min-width:180px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:7px 14px;font-size:13px}
-  .search-box:focus{outline:none;border-color:var(--blue)}
-  .filter-sel{background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:7px 12px;font-size:12px;cursor:pointer}
-
-  /* PROGRESS */
-  .prog-wrap{margin-bottom:14px;display:none}
-  .prog-hdr{font-size:12px;color:var(--mu);display:flex;justify-content:space-between;margin-bottom:5px}
-  .prog-track{height:6px;background:var(--s2);border-radius:3px;overflow:hidden}
-  .prog-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:3px;transition:width .5s;width:0}
-
-  /* TABLE */
-  .tbl-wrap{background:var(--s1);border:1px solid var(--bd);border-radius:10px;overflow:hidden}
-  table{width:100%;border-collapse:collapse;table-layout:fixed}
-  col.ct1{width:90px}col.ct2{width:155px}col.ct3{width:68px}
-  col.ct4{width:148px}col.ct5{width:128px}col.ct6{width:122px}
-  col.ct7{width:108px}col.ct8{width:52px}col.ct9{width:70px}
-  th{background:var(--s2);padding:9px 12px;text-align:left;font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);font-weight:600;white-space:nowrap}
-  td{padding:10px 12px;border-bottom:1px solid var(--bd);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  tr:last-child td{border-bottom:none}
-  tr.trh:hover{background:var(--s2);cursor:pointer}
-  tr.tr-fraud td{background:rgba(248,81,73,.04)}
-  tr.tr-fraud:hover td{background:rgba(248,81,73,.08)}
-
-  /* RESOLUTION STATUS */
-  .rs{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
-  .rs-ok{background:var(--gbg);color:var(--green);border:1px solid rgba(63,185,80,.3)}
-  .rs-esc{background:var(--ybg);color:var(--yellow);border:1px solid rgba(210,153,34,.3)}
-  .rs-fraud{background:var(--rbg);color:var(--red);border:1px solid rgba(248,81,73,.3)}
-  .rs-proc{background:var(--bbg);color:var(--blue);border:1px solid rgba(88,166,255,.3)}
-  .rs-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-  .rs-ok .rs-dot{background:var(--green)}
-  .rs-esc .rs-dot{background:var(--yellow)}
-  .rs-fraud .rs-dot{background:var(--red);animation:pd .8s infinite}
-  .rs-proc .rs-dot{background:var(--blue);animation:pd .8s infinite}
-  @keyframes pd{0%,100%{opacity:1}50%{opacity:.2}}
-
-  /* PILLS */
-  .pill{display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:600;white-space:nowrap}
-  .pb{background:var(--bbg);color:var(--blue)}.pg{background:var(--gbg);color:var(--green)}
-  .pr{background:var(--rbg);color:var(--red)}.py{background:var(--ybg);color:var(--yellow)}
-  .pp{background:rgba(188,140,255,.12);color:var(--purple)}
-  .po{background:rgba(255,166,87,.12);color:var(--orange)}
-  .pmu{background:var(--s2);color:var(--mu);border:1px solid var(--bd)}
-  .pt{background:rgba(57,208,181,.12);color:var(--teal)}
-
-  /* CONF BAR */
-  .cbar{display:flex;align-items:center;gap:6px}
-  .ctrack{flex:1;height:4px;background:var(--s2);border-radius:2px;min-width:40px}
-  .cfill{height:100%;border-radius:2px;transition:width .5s}
-  .cpct{font-size:11px;color:var(--mu);min-width:26px;text-align:right}
-
-  /* EMPTY */
-  .empty{text-align:center;padding:56px 20px;color:var(--mu)}
-  .ei{font-size:44px;margin-bottom:12px;display:block}
-  .et{font-size:15px;font-weight:600;color:var(--tx2);margin-bottom:5px}
-  .es{font-size:13px}
-
-  /* MODAL */
-  .mback{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;align-items:center;justify-content:center;padding:20px}
-  .mback.open{display:flex}
-  .mbox{background:var(--s1);border:1px solid var(--bd);border-radius:12px;width:700px;max-width:100%;max-height:90vh;overflow:auto}
-  .mhdr{padding:18px 20px 0;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-  .mtitle{font-size:15px;font-weight:700}
-  .msub{font-size:12px;color:var(--mu);margin-top:3px}
-  .mclose{background:none;border:none;color:var(--mu);font-size:20px;cursor:pointer;padding:0;line-height:1}
-  .mclose:hover{color:var(--tx)}
-  .mbody{padding:0 20px 20px}
-
-  /* VERDICT BANNER */
-  .vbanner{border-radius:8px;padding:14px 16px;margin-bottom:16px;border:1px solid;display:flex;align-items:flex-start;gap:12px}
-  .vbanner.resolved{background:var(--gbg);border-color:rgba(63,185,80,.3)}
-  .vbanner.escalated{background:var(--ybg);border-color:rgba(210,153,34,.3)}
-  .vbanner.fraud{background:var(--rbg);border-color:rgba(248,81,73,.3)}
-  .vbanner.processing{background:var(--bbg);border-color:rgba(88,166,255,.3)}
-  .vicon{font-size:22px;flex-shrink:0;margin-top:1px}
-  .vtitle{font-size:13px;font-weight:700}
-  .vdesc{font-size:12px;color:var(--mu);margin-top:3px;line-height:1.5}
-
-  /* REPLY BOX */
-  .reply-box{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:16px}
-  .rlabel{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
-  .rtext{font-size:13px;color:var(--tx2);line-height:1.6;white-space:pre-wrap}
-
-  /* DETAIL GRID */
-  .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
-  .di{background:var(--s2);border-radius:6px;padding:10px 12px}
-  .dlabel{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-  .dval{font-size:13px;font-weight:500}
-
-  /* TIMELINE */
-  .tl-sec{margin-top:4px}
-  .tl-hdr{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px}
-  .tl-item{display:flex;gap:10px;padding-bottom:12px;position:relative}
-  .tl-item:not(:last-child)::after{content:'';position:absolute;left:11px;top:24px;bottom:0;width:1px;background:var(--bd)}
-  .tl-dot{width:22px;height:22px;border-radius:50%;background:var(--s2);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;color:var(--mu);z-index:1}
-  .tl-dot.done{background:rgba(63,185,80,.15);border-color:rgba(63,185,80,.4);color:var(--green)}
-  .tl-dot.fraud{background:var(--rbg);border-color:rgba(248,81,73,.4);color:var(--red)}
-  .tl-dot.skip{background:transparent;border-color:var(--s2);color:var(--bd)}
-  .tl-node{font-size:12px;font-weight:600}
-  .tl-detail{font-size:11px;color:var(--mu);margin-top:2px;line-height:1.5}
-
-  /* SUBMIT PANEL */
-  .spanel{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:16px 20px;margin-bottom:16px;display:none}
-  .sptitle{font-size:13px;font-weight:700;color:var(--blue);margin-bottom:12px}
-  .sprow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-  .spinput{background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:8px 12px;font-size:13px;width:100%}
-  .spinput:focus{outline:none;border-color:var(--blue)}
-  textarea.spinput{height:76px;resize:vertical}
-
-  @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
-  .rnew{animation:fi .3s ease}
-  @keyframes sp{to{transform:rotate(360deg)}}
-  .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--bd);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+:root{--bg:#F4F6FB;--white:#fff;--green:#1A7A4A;--gl:#E8F5EE;--gm:#2ECC71;--text:#1A1D23;--t2:#6B7280;--t3:#9CA3AF;--bd:#E5E7EB;--bd2:#D1D5DB;--red:#EF4444;--rl:#FEF2F2;--yel:#F59E0B;--yl:#FFFBEB;--blue:#3B82F6;--bl:#EFF6FF;--pur:#8B5CF6;--pl:#F5F3FF;--teal:#0D9488;--sh:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);--shm:0 4px 6px -1px rgba(0,0,0,.08);--r:12px;--rs:8px;--rl2:16px;--rf:999px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;font-size:14px}
+.sidebar{width:220px;min-height:100vh;background:var(--white);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:hidden}
+.sb-logo{padding:22px 18px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd)}
+.sb-logo-icon{width:36px;height:36px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.sb-logo-text{font-size:16px;font-weight:600}.sb-logo-text span{color:var(--green)}
+.sb-sec{padding:14px 16px 6px;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.8px}
+.sb-nav{padding:0 8px;flex:1}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);font-size:13px;font-weight:500;color:var(--t2);cursor:pointer;transition:all .15s;margin-bottom:2px}
+.sb-item:hover{background:var(--bg);color:var(--text)}
+.sb-item.active{background:var(--gl);color:var(--green)}
+.sb-item svg{width:16px;height:16px;flex-shrink:0;stroke-width:2}
+.sb-badge{margin-left:auto;background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:var(--rf);min-width:20px;text-align:center}
+.sb-badge.gray{background:var(--bd2);color:var(--t2)}
+.sb-bottom{padding:14px;border-top:1px solid var(--bd);margin-top:auto}
+.sb-user{display:flex;align-items:center;gap:10px}
+.sb-av{width:34px;height:34px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green);flex-shrink:0}
+.sb-uname{font-size:12px;font-weight:600}.sb-uemail{font-size:10px;color:var(--t3)}
+.live-r{width:8px;height:8px;border-radius:50%;background:var(--gm);margin-left:auto;animation:ring 2s infinite}
+@keyframes ring{0%,100%{box-shadow:0 0 0 0 rgba(46,204,113,.5)}50%{box-shadow:0 0 0 4px rgba(46,204,113,0)}}
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{background:var(--white);border-bottom:1px solid var(--bd);padding:0 28px;height:60px;display:flex;align-items:center;gap:14px}
+.pg-title{font-size:19px;font-weight:600}
+.tb-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tbtn{display:inline-flex;align-items:center;gap:6px;padding:8px 15px;border-radius:var(--rs);font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none}
+.tbtn-p{background:var(--green);color:#fff}.tbtn-p:hover{background:#145f38}.tbtn-p:disabled{opacity:.5;cursor:not-allowed}
+.tbtn-o{background:transparent;color:var(--text);border:1.5px solid var(--bd2)}.tbtn-o:hover{border-color:var(--green);color:var(--green);background:var(--gl)}
+.ptag{font-size:11px;color:var(--t3);background:var(--bg);border:1px solid var(--bd);padding:3px 10px;border-radius:var(--rf);font-family:'DM Mono',monospace}
+.pg-body{padding:22px 28px;flex:1}
+.sg{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+.sc{background:var(--white);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);border:1px solid var(--bd);transition:box-shadow .2s}
+.sc:hover{box-shadow:var(--shm)}
+.sc.ft{background:var(--green);border-color:var(--green)}
+.sc-lb{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.sc.ft .sc-lb{color:rgba(255,255,255,.65)}
+.sc-v{font-size:26px;font-weight:600;line-height:1}
+.sc.ft .sc-v{color:#fff}
+.sc-f{font-size:11px;color:var(--t3);margin-top:5px}
+.sc.ft .sc-f{color:rgba(255,255,255,.55)}
+.rg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+.rc{background:var(--white);border-radius:var(--r);padding:16px 18px;box-shadow:var(--sh);border:1px solid var(--bd);display:flex;align-items:center;gap:14px}
+.rc-ic{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.rc.res .rc-ic{background:var(--gl)}.rc.esc .rc-ic{background:var(--yl)}.rc.frd .rc-ic{background:var(--rl)}
+.rc-ct{font-size:26px;font-weight:600;line-height:1}
+.rc.res .rc-ct{color:var(--green)}.rc.esc .rc-ct{color:var(--yel)}.rc.frd .rc-ct{color:var(--red)}
+.rc-ti{font-size:13px;font-weight:600;margin-bottom:2px}.rc-ds{font-size:11px;color:var(--t3);line-height:1.4}
+.cr{display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap}
+.sw{flex:1;min-width:180px;position:relative}
+.sw svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--t3);stroke-width:2}
+.si{width:100%;background:var(--white);border:1.5px solid var(--bd);color:var(--text);border-radius:var(--rs);padding:8px 12px 8px 34px;font-size:13px;font-family:'DM Sans',sans-serif;box-shadow:var(--sh)}
+.si:focus{outline:none;border-color:var(--green)}
+.fsel{background:var(--white);border:1.5px solid var(--bd);color:var(--text);border-radius:var(--rs);padding:8px 12px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:var(--sh)}
+.fsel:focus{outline:none;border-color:var(--green)}
+.ibtn{display:inline-flex;align-items:center;gap:5px;padding:8px 13px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;background:var(--white);border:1.5px solid var(--bd);color:var(--t2);box-shadow:var(--sh);font-family:'DM Sans',sans-serif;text-decoration:none;transition:all .15s}
+.ibtn:hover{border-color:var(--green);color:var(--green);background:var(--gl)}
+.pw{background:var(--white);border:1px solid var(--bd);border-radius:var(--rs);padding:13px 17px;margin-bottom:14px;display:none;box-shadow:var(--sh)}
+.ph{display:flex;justify-content:space-between;font-size:12px;color:var(--t2);margin-bottom:7px;font-weight:500}
+.pt{height:6px;background:var(--bg);border-radius:99px;overflow:hidden}
+.pf{height:100%;background:linear-gradient(90deg,var(--green),var(--gm));border-radius:99px;transition:width .5s;width:0}
+.tc{background:var(--white);border-radius:var(--rl2);box-shadow:var(--sh);border:1px solid var(--bd);overflow:hidden}
+.th2{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.tt{font-size:14px;font-weight:600}.tct{font-size:12px;color:var(--t3)}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+col.a{width:88px}col.b{width:148px}col.c{width:68px}col.d{width:142px}col.e{width:123px}col.f{width:118px}col.g{width:103px}col.h{width:50px}col.i{width:68px}
+th{padding:9px 15px;text-align:left;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;background:var(--bg);border-bottom:1px solid var(--bd)}
+td{padding:11px 15px;border-bottom:1px solid var(--bd);font-size:13px;vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+tr.rh:hover{background:#FAFBFC;cursor:pointer}
+tr.tf td{background:#FFF8F8}
+tr.tf:hover td{background:#FFF0F0}
+.sb2{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--rf);font-size:11px;font-weight:600}
+.so{background:var(--gl);color:var(--green)}.se{background:var(--yl);color:#92400E}.sf{background:var(--rl);color:var(--red)}.sp2{background:var(--bl);color:var(--blue)}
+.sd{width:6px;height:6px;border-radius:50%}
+.so .sd{background:var(--green)}.se .sd{background:var(--yel)}.sf .sd{background:var(--red);animation:pu .8s infinite}.sp2 .sd{background:var(--blue);animation:pu .8s infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.2}}
+.pill{display:inline-block;padding:3px 9px;border-radius:var(--rf);font-size:11px;font-weight:500}
+.pg2{background:var(--gl);color:var(--green)}.pr2{background:var(--rl);color:var(--red)}.pb2{background:var(--bl);color:var(--blue)}.py2{background:var(--yl);color:#92400E}.pp2{background:var(--pl);color:var(--pur)}.pt2{background:#F0FDFA;color:var(--teal)}.pgr{background:var(--bg);color:var(--t3);border:1px solid var(--bd)}.po2{background:#FFF7ED;color:#C2410C}
+.cb2{display:flex;align-items:center;gap:6px}
+.ck{flex:1;height:5px;background:var(--bg);border-radius:99px;min-width:44px}
+.cf{height:100%;border-radius:99px;transition:width .5s}
+.cp{font-size:11px;color:var(--t3);min-width:28px;text-align:right;font-family:'DM Mono',monospace}
+.es2{text-align:center;padding:60px 20px;color:var(--t3)}
+.ei2{font-size:44px;margin-bottom:12px;display:block}
+.et2{font-size:15px;font-weight:600;color:var(--t2);margin-bottom:5px}.es3{font-size:13px}
+.spp{background:var(--white);border:1px solid var(--bd);border-radius:var(--r);padding:18px 20px;margin-bottom:14px;display:none;box-shadow:var(--sh)}
+.spt{font-size:13px;font-weight:600;color:var(--green);margin-bottom:12px}
+.spr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.spi{width:100%;background:var(--bg);border:1.5px solid var(--bd);color:var(--text);border-radius:var(--rs);padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif}
+.spi:focus{outline:none;border-color:var(--green);background:#fff}
+textarea.spi{height:76px;resize:vertical}
+.mo{display:none;position:fixed;inset:0;background:rgba(17,24,39,.4);z-index:200;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(3px)}
+.mo.open{display:flex}
+.mb2{background:var(--white);border-radius:var(--rl2);width:680px;max-width:100%;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.mtp{padding:20px 22px 0;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.mti{font-size:15px;font-weight:600}.msu{font-size:12px;color:var(--t3);margin-top:2px}
+.mcl{background:none;border:none;color:var(--t3);cursor:pointer;padding:4px;border-radius:6px;font-size:18px;line-height:1}
+.mcl:hover{background:var(--bg);color:var(--text)}
+.mbd{padding:0 22px 22px}
+.vd{border-radius:var(--r);padding:14px 16px;margin-bottom:14px;display:flex;align-items:flex-start;gap:12px}
+.vd.resolved{background:var(--gl);border:1px solid rgba(26,122,74,.2)}.vd.escalated{background:var(--yl);border:1px solid rgba(245,158,11,.25)}.vd.fraud{background:var(--rl);border:1px solid rgba(239,68,68,.25)}.vd.processing{background:var(--bl);border:1px solid rgba(59,130,246,.2)}
+.vi{font-size:20px;flex-shrink:0;margin-top:2px}.vti{font-size:13px;font-weight:600}.vde{font-size:12px;color:var(--t2);margin-top:3px;line-height:1.5}
+.rb2{background:var(--bg);border:1px solid var(--bd);border-radius:var(--rs);padding:13px;margin-bottom:14px}
+.rl3{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.rt{font-size:13px;color:var(--t2);line-height:1.65;white-space:pre-wrap}
+.dg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px}
+.di{background:var(--bg);border-radius:var(--rs);padding:10px 13px;border:1px solid var(--bd)}
+.dl{font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.dv{font-size:13px;font-weight:500}
+.tlh{font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:11px}
+.tli{display:flex;gap:11px;padding-bottom:13px;position:relative}
+.tli:not(:last-child)::after{content:'';position:absolute;left:12px;top:25px;bottom:0;width:1px;background:var(--bd)}
+.tld{width:24px;height:24px;border-radius:50%;background:var(--bg);border:1.5px solid var(--bd);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:10px;font-weight:700;color:var(--t3);z-index:1}
+.tld.done{background:var(--gl);border-color:var(--green);color:var(--green)}.tld.fraud{background:var(--rl);border-color:var(--red);color:var(--red)}.tld.skip{background:transparent;border-color:var(--bd2);color:var(--t3)}
+.tln{font-size:12px;font-weight:600}.tlde{font-size:11px;color:var(--t3);margin-top:2px;line-height:1.5}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--bd2);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
+@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ra{animation:fu .25s ease}
 </style>
 </head>
 <body>
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">🌊</div>
+    <div class="sb-logo-text">Shop<span>Wave</span></div>
+  </div>
+  <div class="sb-sec">Menu</div>
+  <nav class="sb-nav">
+    <div class="sb-item active">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+      <span class="sb-badge" id="sb-n">0</span>
+    </div>
+    <div class="sb-item" onclick="toggleSubmit()">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      New Ticket
+    </div>
+    <div class="sb-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Analytics
+    </div>
+    <div class="sb-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+      Audit Log
+      <span class="sb-badge gray">JSON</span>
+    </div>
+    <div class="sb-sec" style="padding-left:0;margin-top:6px">General</div>
+    <div class="sb-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Settings
+    </div>
+    <div class="sb-item">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Help
+    </div>
+  </nav>
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-av">RV</div>
+      <div><div class="sb-uname">Raghu Varma</div><div class="sb-uemail" id="sb-prov">ollama · local</div></div>
+      <div class="live-r"></div>
+    </div>
+  </div>
+</aside>
 
-<div class="header">
-  <div class="logo">🌊 Shop<span>Wave</span></div>
-  <div class="vbadge">Autonomous Agent v2</div>
-  <span id="hdr-provider">Loading…</span>
-  <div class="hright">
-    <div class="live-dot"></div>
-    <span id="hdr-status">Connecting…</span>
+<div class="main">
+  <div class="topbar">
+    <div class="pg-title">Support Dashboard</div>
+    <span class="ptag" id="hdr-p">Loading…</span>
+    <div class="tb-r">
+      <button class="tbtn tbtn-o" onclick="loadHistory()">↻ Refresh</button>
+      <a href="/audit-export" class="tbtn tbtn-o" style="text-decoration:none">⬇ Export</a>
+      <button class="tbtn tbtn-p" id="btn-run" onclick="startBatch()">▶ Run All 20 Tickets</button>
+    </div>
+  </div>
+
+  <div class="pg-body">
+    <div class="sg">
+      <div class="sc ft"><div class="sc-lb">Total Processed</div><div class="sc-v" id="s-tot">—</div><div class="sc-f">↑ tickets handled</div></div>
+      <div class="sc"><div class="sc-lb">Auto-Resolved</div><div class="sc-v" id="s-res" style="color:var(--green)">—</div><div class="sc-f">agent took action</div></div>
+      <div class="sc"><div class="sc-lb">Escalated</div><div class="sc-v" id="s-esc" style="color:var(--yel)">—</div><div class="sc-f">to human queue</div></div>
+      <div class="sc"><div class="sc-lb">Refunds Issued</div><div class="sc-v" id="s-ref" style="color:var(--pur)">—</div><div class="sc-f">payments processed</div></div>
+      <div class="sc"><div class="sc-lb">Fraud Caught</div><div class="sc-v" id="s-frd" style="color:var(--red)">—</div><div class="sc-f">blocked &amp; flagged</div></div>
+      <div class="sc"><div class="sc-lb">Avg Response</div><div class="sc-v" id="s-avg" style="color:var(--teal)">—</div><div class="sc-f">per ticket</div></div>
+    </div>
+
+    <div class="rg">
+      <div class="rc res"><div class="rc-ic">✅</div><div><div class="rc-ct" id="rb-ok">0</div><div class="rc-ti">Tickets Resolved</div><div class="rc-ds">Agent issued refund, cancelled order, or replied — no human needed</div></div></div>
+      <div class="rc esc"><div class="rc-ic">⬆️</div><div><div class="rc-ct" id="rb-es">0</div><div class="rc-ti">Escalated to Human</div><div class="rc-ds">Warranty claims, refunds over $200, or ambiguous cases</div></div></div>
+      <div class="rc frd"><div class="rc-ic">🚨</div><div><div class="rc-ct" id="rb-fr">0</div><div class="rc-ti">Fraud Detected</div><div class="rc-ds">Social engineering and false tier claims caught and blocked</div></div></div>
+    </div>
+
+    <div class="pw" id="pw"><div class="ph"><span id="pt2">Processing…</span><span id="pp" style="font-family:'DM Mono',monospace;font-size:11px">0%</span></div><div class="pt"><div class="pf" id="pf"></div></div></div>
+
+    <div class="cr">
+      <div class="sw">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+        <input class="si" id="search" placeholder="Search ticket, customer, intent, decision…" oninput="fr()"/>
+      </div>
+      <select class="fsel" id="filt" onchange="fr()">
+        <option value="">All statuses</option>
+        <option value="resolved">✅ Resolved</option>
+        <option value="escalated">⬆️ Escalated</option>
+        <option value="fraud">🚨 Fraud</option>
+        <option value="processing">⏳ Processing</option>
+      </select>
+      <button class="ibtn" onclick="toggleSubmit()">＋ New Ticket</button>
+    </div>
+
+    <div class="spp" id="spp">
+      <div class="spt">Submit a live ticket</div>
+      <div class="spr"><input class="spi" id="fe" placeholder="customer@email.com"/><input class="spi" id="fs" placeholder="Subject line"/></div>
+      <textarea class="spi" id="fb" placeholder="Describe the issue…"></textarea>
+      <div style="margin-top:11px;display:flex;gap:8px"><button class="tbtn tbtn-p" onclick="subT()">Submit</button><button class="tbtn tbtn-o" onclick="toggleSubmit()">Cancel</button></div>
+    </div>
+
+    <div class="tc">
+      <div class="th2"><div class="tt">Ticket Queue</div><div class="tct" id="tct">0 tickets</div></div>
+      <table>
+        <colgroup><col class="a"/><col class="b"/><col class="c"/><col class="d"/><col class="e"/><col class="f"/><col class="g"/><col class="h"/><col class="i"/></colgroup>
+        <thead><tr><th>Ticket</th><th>Customer</th><th>Tier</th><th>Intent</th><th>Decision</th><th>Resolution</th><th>Confidence</th><th>Tools</th><th>Time</th></tr></thead>
+        <tbody id="tbody"><tr><td colspan="9"><div class="es2"><span class="ei2">🤖</span><div class="et2">No tickets processed yet</div><div class="es3">Click <strong>Run All 20 Tickets</strong> to start.</div></div></td></tr></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<div class="page">
-
-  <div class="stats-row">
-    <div class="sc"><div class="sc-label">Total processed</div><div class="sc-val cb" id="s-total">—</div><div class="sc-sub">tickets handled</div></div>
-    <div class="sc"><div class="sc-label">Auto-resolved</div><div class="sc-val cg" id="s-resolved">—</div><div class="sc-sub">agent took action</div></div>
-    <div class="sc"><div class="sc-label">Escalated</div><div class="sc-val cy" id="s-escalated">—</div><div class="sc-sub">to human queue</div></div>
-    <div class="sc"><div class="sc-label">Refunds issued</div><div class="sc-val cp" id="s-refunds">—</div><div class="sc-sub">payments processed</div></div>
-    <div class="sc"><div class="sc-label">Fraud caught</div><div class="sc-val cr" id="s-fraud">—</div><div class="sc-sub">blocked &amp; flagged</div></div>
-    <div class="sc"><div class="sc-label">Avg response</div><div class="sc-val ct" id="s-avg">—</div><div class="sc-sub">per ticket</div></div>
-  </div>
-
-  <!-- BIG RESOLUTION SUMMARY — inspector sees this immediately -->
-  <div class="res-banner">
-    <div class="rb resolved">
-      <div class="rb-icon">✅</div>
-      <div>
-        <div class="rb-count" id="rb-ok">0</div>
-        <div class="rb-label">TICKETS RESOLVED — agent issued refund, cancelled order, sent reply, or approved return without human involvement</div>
-      </div>
-    </div>
-    <div class="rb escalated">
-      <div class="rb-icon">⬆️</div>
-      <div>
-        <div class="rb-count" id="rb-esc">0</div>
-        <div class="rb-label">ESCALATED TO HUMAN — warranty claims, large refunds ($200+), borderline cases, or ambiguous tickets</div>
-      </div>
-    </div>
-    <div class="rb fraud">
-      <div class="rb-icon">🚨</div>
-      <div>
-        <div class="rb-count" id="rb-fraud">0</div>
-        <div class="rb-label">FRAUD DETECTED — social engineering or false tier claims caught and blocked by guard rail</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="prog-wrap" id="prog-wrap">
-    <div class="prog-hdr"><span id="prog-text">Processing…</span><span id="prog-pct">0%</span></div>
-    <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
-  </div>
-
-  <div class="controls">
-    <button class="btn btn-run" id="btn-run" onclick="startBatch()">▶ Run All 20 Tickets</button>
-    <button class="btn" onclick="loadHistory()">↻ Refresh</button>
-    <button class="btn" onclick="toggleSubmit()">＋ New Ticket</button>
-    <input class="search-box" id="search" placeholder="Search ticket, customer, intent, decision…" oninput="filterRows()"/>
-    <select class="filter-sel" id="filt" onchange="filterRows()">
-      <option value="">All statuses</option>
-      <option value="resolved">Resolved</option>
-      <option value="escalated">Escalated</option>
-      <option value="fraud">Fraud caught</option>
-      <option value="processing">Processing</option>
-    </select>
-    <a href="/audit-export" class="btn" style="text-decoration:none">⬇ Audit</a>
-  </div>
-
-  <div class="spanel" id="spanel">
-    <div class="sptitle">Submit a live ticket</div>
-    <div class="sprow">
-      <input class="spinput" id="f-email" placeholder="customer@email.com"/>
-      <input class="spinput" id="f-subject" placeholder="Subject line"/>
-    </div>
-    <textarea class="spinput" id="f-body" placeholder="Ticket body…"></textarea>
-    <div style="margin-top:10px;display:flex;gap:8px">
-      <button class="btn btn-run" onclick="submitTicket()">Submit</button>
-      <button class="btn" onclick="toggleSubmit()">Cancel</button>
-    </div>
-  </div>
-
-  <div class="tbl-wrap">
-    <table>
-      <colgroup>
-        <col class="ct1"/><col class="ct2"/><col class="ct3"/>
-        <col class="ct4"/><col class="ct5"/><col class="ct6"/>
-        <col class="ct7"/><col class="ct8"/><col class="ct9"/>
-      </colgroup>
-      <thead>
-        <tr>
-          <th>Ticket</th><th>Customer</th><th>Tier</th>
-          <th>Intent</th><th>Decision</th>
-          <th title="Was the ticket resolved, escalated, or fraud caught?">Resolution ⬤</th>
-          <th>Confidence</th><th title="Number of tool calls made">Tools</th><th>Time</th>
-        </tr>
-      </thead>
-      <tbody id="tbody">
-        <tr><td colspan="9">
-          <div class="empty">
-            <span class="ei">🤖</span>
-            <div class="et">No tickets processed yet</div>
-            <div class="es">Click <strong>Run All 20 Tickets</strong> to start. Each row will show a coloured resolution status once done.</div>
-          </div>
-        </td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- MODAL -->
-<div class="mback" id="modal" onclick="if(event.target===this)closeModal()">
-  <div class="mbox">
-    <div class="mhdr">
-      <div><div class="mtitle" id="mtitle">Detail</div><div class="msub" id="msub"></div></div>
-      <button class="mclose" onclick="closeModal()">✕</button>
-    </div>
-    <div class="mbody" id="mbody"><div style="padding:40px;text-align:center"><span class="spinner"></span></div></div>
+<div class="mo" id="modal" onclick="if(event.target===this)cm()">
+  <div class="mb2">
+    <div class="mtp"><div><div class="mti" id="mti">Detail</div><div class="msu" id="msu"></div></div><button class="mcl" onclick="cm()">✕</button></div>
+    <div class="mbd" id="mbd"><div style="padding:48px;text-align:center"><span class="spin"></span></div></div>
   </div>
 </div>
 
 <script>
-let allRows = [];
-let batchInt = null;
-
-window.addEventListener('load', async () => {
-  await ping();
-  await loadStats();
-  await loadHistory();
-  setInterval(() => { loadStats(); loadHistory(); }, 5000);
-});
-
-async function ping() {
-  try {
-    const d = await api('/health');
-    document.getElementById('hdr-status').textContent = 'Online';
-    document.getElementById('hdr-provider').textContent = (d.llm_provider||'ollama') + ' · concurrency=' + (d.concurrent_limit||1);
-  } catch { document.getElementById('hdr-status').textContent = 'Server offline'; }
-}
-
-async function loadStats() {
-  try {
-    const d = await api('/stats');
-    set('s-total',     d.total_processed || 0);
-    set('s-resolved',  d.resolved_count  || 0);
-    set('s-escalated', d.escalated_count || 0);
-    set('s-refunds',   d.refunds_issued  || 0);
-    set('s-fraud',     d.fraud_count     || 0);
-    set('s-avg',       d.avg_ms ? d.avg_ms+'ms' : '—');
-    set('rb-ok',    d.resolved_count  || 0);
-    set('rb-esc',   d.escalated_count || 0);
-    set('rb-fraud', d.fraud_count     || 0);
-  } catch {}
-}
-
-async function startBatch() {
-  const btn = document.getElementById('btn-run');
-  btn.disabled = true; btn.textContent = '⏳ Running…';
-  document.getElementById('prog-wrap').style.display = 'block';
-  try {
-    await api('/batch', {method:'POST'});
-    batchInt = setInterval(pollBatch, 2000);
-  } catch { btn.disabled = false; btn.textContent = '▶ Run All 20 Tickets'; }
-}
-
-async function pollBatch() {
-  try {
-    const d = await api('/batch-status');
-    const pct = d.total > 0 ? Math.round(d.completed/d.total*100) : 0;
-    document.getElementById('prog-fill').style.width = pct+'%';
-    document.getElementById('prog-pct').textContent = pct+'%';
-    document.getElementById('prog-text').textContent = `Processing… ${d.completed}/${d.total}`;
-    await loadHistory(); await loadStats();
-    if (!d.running) {
-      clearInterval(batchInt);
-      const btn = document.getElementById('btn-run');
-      btn.disabled = false; btn.textContent = '▶ Run Again';
-      set('prog-text', `All ${d.total} tickets done`);
-    }
-  } catch {}
-}
-
-async function loadHistory() {
-  try { allRows = await api('/tickets-history'); renderTable(allRows); } catch {}
-}
-
-function cat(t) {
-  if (t.fraud_flag) return 'fraud';
-  if (t.status === 'escalated') return 'escalated';
-  if (t.status === 'resolved')  return 'resolved';
-  return 'processing';
-}
-
-function filterRows() {
-  const q  = document.getElementById('search').value.toLowerCase();
-  const sf = document.getElementById('filt').value;
-  const rows = allRows.filter(t => {
-    const mq = !q || [t.ticket_id,t.customer,t.intent,t.decision,t.status].some(v=>(v||'').toLowerCase().includes(q));
-    const ms = !sf || cat(t) === sf;
-    return mq && ms;
-  });
-  renderTable(rows);
-}
-
-function renderTable(rows) {
-  const tb = document.getElementById('tbody');
-  if (!rows.length) {
-    tb.innerHTML = `<tr><td colspan="9"><div class="empty"><span class="ei">📭</span><div class="et">No matching tickets</div></div></td></tr>`;
-    return;
-  }
-  tb.innerHTML = rows.map(t => {
-    const c = cat(t); const isP = c==='processing';
-    const conf = parseFloat(t.confidence||0);
-    const pct  = Math.round(conf*100);
-    const cc   = conf>=0.85?'var(--green)':conf>=0.7?'var(--yellow)':'var(--red)';
-    return `<tr class="trh rnew${t.fraud_flag?' tr-fraud':''}" onclick="showDetail('${t.ticket_id}')">
-      <td><strong style="font-size:12px">${t.ticket_id}</strong></td>
-      <td title="${t.customer||''}">${t.customer||'<span style="color:var(--mu)">Unknown</span>'}</td>
-      <td>${tierBadge(t.tier)}</td>
-      <td>${intentBadge(t.intent)}</td>
-      <td>${decBadge(t.decision)}</td>
-      <td>${resBadge(t)}</td>
-      <td>${isP?`<span class="spinner"></span>`:`<div class="cbar"><div class="ctrack"><div class="cfill" style="width:${pct}%;background:${cc}"></div></div><span class="cpct">${pct}%</span></div>`}</td>
-      <td style="color:var(--mu);font-size:12px;text-align:center">${t.tool_call_count||0}</td>
-      <td style="color:var(--mu);font-size:12px">${t.total_ms?t.total_ms.toLocaleString()+'ms':isP?'<span class="spinner"></span>':'—'}</td>
-    </tr>`;
-  }).join('');
-}
-
-function resBadge(t) {
-  const c = cat(t);
-  if (c==='resolved')  return `<span class="rs rs-ok"><span class="rs-dot"></span>Resolved</span>`;
-  if (c==='fraud')     return `<span class="rs rs-fraud"><span class="rs-dot"></span>Fraud caught</span>`;
-  if (c==='escalated') return `<span class="rs rs-esc"><span class="rs-dot"></span>Escalated</span>`;
-  return `<span class="rs rs-proc"><span class="rs-dot"></span>Processing…</span>`;
-}
-
-function tierBadge(t) {
-  const label = t==='1'||t==='standard'?'standard':t==='2'||t==='premium'?'premium':t==='3'||t==='vip'?'vip':(t||'std');
-  const cls   = label==='vip'?'pp':label==='premium'?'pb':'pmu';
-  return t?`<span class="pill ${cls}" style="font-size:9px">${label}</span>`:'—';
-}
-
-function intentBadge(i) {
-  if (!i||i==='—') return '—';
-  const m={refund_request:'pr',return_request:'po',order_cancellation:'py',fraud_report:'pr',
-    billing_issue:'pp',order_status:'pb',product_question:'pt',warranty_claim:'po',
-    exchange_request:'pt',general_complaint:'pmu',general_question:'pmu',other:'pmu'};
-  return `<span class="pill ${m[i]||'pmu'}" style="font-size:9px">${i.replace(/_/g,' ')}</span>`;
-}
-
-function decBadge(d) {
-  if (!d||d==='—') return '—';
-  const m={issue_refund:['pg','💰 Refund'],approve_return:['pb','📦 Return'],deny:['pr','✗ Deny'],
-    cancel_order:['po','✕ Cancel'],send_reply:['pb','💬 Reply'],
-    request_info:['pp','? Info'],escalate:['py','⬆ Escalate']};
-  const [cls,label]=m[d]||['pmu',d.replace(/_/g,' ')];
-  return `<span class="pill ${cls}">${label}</span>`;
-}
-
-/* MODAL */
-async function showDetail(id) {
-  document.getElementById('mtitle').textContent = id;
-  document.getElementById('msub').textContent = 'Loading…';
-  document.getElementById('mbody').innerHTML = '<div style="padding:40px;text-align:center"><span class="spinner"></span></div>';
-  document.getElementById('modal').classList.add('open');
-  try {
-    const [s, detail] = await Promise.all([api('/ticket-status/'+id), api('/ticket-detail/'+id)]);
-    const c = s.fraud_flag?'fraud':s.status==='escalated'?'escalated':s.status==='resolved'?'resolved':'processing';
-    const vmap = {
-      resolved:  {icon:'✅',title:'Ticket resolved — agent took action',desc:resolveDesc(s),cls:'resolved'},
-      escalated: {icon:'⬆️',title:'Escalated to human agent',desc:s.escalation_reason||'Requires human review',cls:'escalated'},
-      fraud:     {icon:'🚨',title:'Fraud / social engineering blocked',desc:s.fraud_reason||'False claims detected',cls:'fraud'},
-      processing:{icon:'⏳',title:'Currently processing…',desc:'Agent is working through the pipeline',cls:'processing'},
-    };
-    const v = vmap[c];
-    document.getElementById('mtitle').textContent = `${id} — ${s.customer_name||'Unknown'}`;
-    document.getElementById('msub').textContent   = s.intent?s.intent.replace(/_/g,' '):'';
-    const conf = parseFloat(s.confidence||0);
-    const pct  = Math.round(conf*100);
-    const cc   = conf>=0.85?'var(--green)':conf>=0.7?'var(--yellow)':'var(--red)';
-    const events = detail.events||[];
-    const ev = events.find(e=>e.event==='ticket_complete')||{};
-    const replyText = s.reply||ev.reply_draft||'';
-
-    document.getElementById('mbody').innerHTML = `
-      <div class="vbanner ${v.cls}">
-        <div class="vicon">${v.icon}</div>
-        <div><div class="vtitle">${v.title}</div><div class="vdesc">${esc(v.desc)}</div></div>
-      </div>
-      ${replyText?`<div class="reply-box"><div class="rlabel">📧 Reply sent to customer</div><div class="rtext">${esc(replyText)}</div></div>`:''}
-      <div class="dgrid">
-        <div class="di"><div class="dlabel">Customer</div><div class="dval">${s.customer_name||'Unknown'}</div></div>
-        <div class="di"><div class="dlabel">Tier</div><div class="dval">${tierBadge(s.customer_tier)}</div></div>
-        <div class="di"><div class="dlabel">Decision</div><div class="dval">${decBadge(s.decision)}</div></div>
-        <div class="di"><div class="dlabel">Confidence</div><div class="dval">
-          <div class="cbar"><div class="ctrack" style="min-width:70px"><div class="cfill" style="width:${pct}%;background:${cc}"></div></div><span class="cpct">${pct}%</span></div>
-        </div></div>
-        <div class="di"><div class="dlabel">Action taken</div><div class="dval">${(s.action_taken||'—').replace(/_/g,' ')}</div></div>
-        <div class="di"><div class="dlabel">Tool calls</div><div class="dval">${s.tool_calls||ev.tool_call_count||0}</div></div>
-        ${s.refund_id?`<div class="di"><div class="dlabel">Refund ID</div><div class="dval" style="color:var(--green)">${s.refund_id}</div></div>`:''}
-        ${s.urgency?`<div class="di"><div class="dlabel">Urgency</div><div class="dval">${urgBadge(s.urgency)}</div></div>`:''}
-        ${s.fraud_flag?`<div class="di" style="grid-column:1/-1;background:var(--rbg)"><div class="dlabel">🚨 Fraud reason</div><div class="dval" style="color:var(--red)">${esc(s.fraud_reason||'Social engineering detected')}</div></div>`:''}
-        ${c==='escalated'?`<div class="di" style="grid-column:1/-1"><div class="dlabel">Escalation reason</div><div class="dval" style="color:var(--yellow)">${esc(s.escalation_reason||'—')}</div></div>`:''}
-      </div>
-      <div class="tl-sec"><div class="tl-hdr">Pipeline trace</div>${buildTL(events,c,ev)}</div>
-    `;
-  } catch(e) {
-    document.getElementById('mbody').innerHTML = `<div style="color:var(--red);padding:20px">Error: ${e.message}</div>`;
-  }
-}
-
-function resolveDesc(s) {
-  const m = {
-    issue_refund:`Refund${s.refund_id?' '+s.refund_id:''} issued to original payment method`,
-    approve_return:'Return approved — RMA instructions sent to customer',
-    deny:'Request denied per policy — explanation and alternatives sent to customer',
-    cancel_order:'Order cancelled — confirmation sent to customer',
-    send_reply:'Query answered from knowledge base — reply sent',
-    request_info:'Clarifying questions sent — awaiting customer response',
-  };
-  return m[s.decision] || (s.action_taken||'Agent completed processing').replace(/_/g,' ');
-}
-
-function buildTL(events, c, ev) {
-  const NODES = ['ingest_ticket','lookup_customer','classify_intent','lookup_order_product','check_policy','decide','act','log_outcome'];
-  if (!events.length) return '<div style="color:var(--mu);font-size:12px">No events yet.</div>';
-  const emap = {};
-  events.forEach(e=>{ if(e.event) emap[e.event]=e; });
-  const shortCircuit = !!emap['customer_not_found'];
-
-  return NODES.map((node,i) => {
-    const skipped = shortCircuit && ['classify_intent','lookup_order_product','check_policy','decide'].includes(node);
-    const isFraud = node==='check_policy' && (emap['fraud_detected']||c==='fraud');
-    const dotCls  = skipped?'skip':isFraud?'fraud':'done';
-    let detail = '';
-    if (node==='ingest_ticket')        detail = 'Order IDs extracted, urgency pre-scanned';
-    else if (node==='lookup_customer') detail = ev.customer_name ? `${ev.customer_name} · tier=${ev.customer_tier||'?'}` : shortCircuit?'Unknown customer — short-circuit triggered':'Customer found';
-    else if (node==='classify_intent') detail = skipped?'SKIPPED (unknown customer)':ev.intent?`intent=${ev.intent} · urgency=${ev.urgency||'?'}`:'Classified';
-    else if (node==='lookup_order_product') detail = skipped?'SKIPPED':ev.customer_name?'Order and product fetched':'Lookup attempted';
-    else if (node==='check_policy')    detail = isFraud?`FRAUD DETECTED: ${emap['fraud_detected']?.reason||'false tier claims'}`:skipped?'SKIPPED':'Policy KB searched';
-    else if (node==='decide')          detail = skipped?'SKIPPED — auto-escalate':ev.decision?`decision=${ev.decision} · conf=${Math.round((ev.confidence_score||0)*100)}%`:'Decision made';
-    else if (node==='act')             detail = ev.refund_id?`Refund ${ev.refund_id} issued`:(ev.action_taken||'action taken').replace(/_/g,' ')+' · reply sent';
-    else if (node==='log_outcome')     detail = ev.tool_call_count!==undefined?`${ev.tool_call_count} tool calls · ${ev.total_ms||0}ms total`:'Audit log written';
-
-    return `<div class="tl-item">
-      <div class="tl-dot ${dotCls}">${skipped?'—':(i+1)}</div>
-      <div style="flex:1;padding-top:2px">
-        <div class="tl-node" style="${skipped?'color:var(--bd)':''}${isFraud?';color:var(--red)':''}">${node}</div>
-        ${detail?`<div class="tl-detail" style="${isFraud?'color:var(--red)':''}">${detail}</div>`:''
-        }
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function closeModal() { document.getElementById('modal').classList.remove('open'); }
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
-
-/* SUBMIT */
-function toggleSubmit() {
-  const p = document.getElementById('spanel');
-  p.style.display = p.style.display==='none'?'block':'none';
-}
-async function submitTicket() {
-  const email   = document.getElementById('f-email').value.trim();
-  const subject = document.getElementById('f-subject').value.trim();
-  const body    = document.getElementById('f-body').value.trim();
-  if (!subject||!body) { alert('Subject and body required.'); return; }
-  try {
-    const d = await api('/ticket', {method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({customer_email:email,subject,body})});
-    alert(`Ticket ${d.ticket_id} submitted!`);
-    document.getElementById('f-email').value=''; document.getElementById('f-subject').value=''; document.getElementById('f-body').value='';
-    toggleSubmit(); setTimeout(loadHistory,3000);
-  } catch(e){ alert('Error: '+e.message); }
-}
-
-/* UTIL */
-function urgBadge(u) {
-  const m={critical:'pr',high:'po',medium:'py',low:'pmu'};
-  return u?`<span class="pill ${m[u]||'pmu'}">${u}</span>`:'—';
-}
-async function api(url, opts={}) {
-  const r = await fetch(url,opts);
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  return r.json();
-}
-function set(id,v){ const e=document.getElementById(id); if(e) e.textContent=v; }
-function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let AR=[],BI=null;
+window.addEventListener('load',async()=>{await pg();await ls();await lh();setInterval(()=>{ls();lh();},5000);});
+async function pg(){try{const d=await A('/health');const i=(d.llm_provider||'ollama')+' · concurrency='+(d.concurrent_limit||1);document.getElementById('hdr-p').textContent=i;document.getElementById('sb-prov').textContent=i;}catch{document.getElementById('hdr-p').textContent='Server offline';}}
+async function ls(){try{const d=await A('/stats');S('s-tot',d.total_processed||0);S('s-res',d.resolved_count||0);S('s-esc',d.escalated_count||0);S('s-ref',d.refunds_issued||0);S('s-frd',d.fraud_count||0);S('s-avg',d.avg_ms?d.avg_ms+'ms':'—');S('rb-ok',d.resolved_count||0);S('rb-es',d.escalated_count||0);S('rb-fr',d.fraud_count||0);S('sb-n',d.total_processed||0);}catch{}}
+async function startBatch(){const b=document.getElementById('btn-run');b.disabled=true;b.innerHTML='<span class="spin"></span> Processing…';document.getElementById('pw').style.display='block';try{await A('/batch',{method:'POST'});BI=setInterval(pb,2000);}catch{b.disabled=false;b.innerHTML='▶ Run All 20 Tickets';}}
+async function pb(){try{const d=await A('/batch-status');const p=d.total>0?Math.round(d.completed/d.total*100):0;document.getElementById('pf').style.width=p+'%';document.getElementById('pp').textContent=p+'%';document.getElementById('pt2').textContent=`Processing… ${d.completed}/${d.total}`;await lh();await ls();if(!d.running){clearInterval(BI);const b=document.getElementById('btn-run');b.disabled=false;b.innerHTML='▶ Run Again';S('pt2',`All ${d.total} tickets done`);}}catch{}}
+async function lh(){try{AR=await A('/tickets-history');rt(AR);}catch{}}
+function cat(t){if(t.fraud_flag)return'fraud';if(t.status==='escalated')return'escalated';if(t.status==='resolved')return'resolved';return'processing';}
+function fr(){const q=document.getElementById('search').value.toLowerCase();const sf=document.getElementById('filt').value;rt(AR.filter(t=>{const mq=!q||[t.ticket_id,t.customer,t.intent,t.decision,t.status].some(v=>(v||'').toLowerCase().includes(q));const ms=!sf||cat(t)===sf;return mq&&ms;}));}
+function rt(rows){const tb=document.getElementById('tbody');S('tct',rows.length+' ticket'+(rows.length!==1?'s':''));if(!rows.length){tb.innerHTML=`<tr><td colspan="9"><div class="es2"><span class="ei2">📭</span><div class="et2">No matching tickets</div></div></td></tr>`;return;}tb.innerHTML=rows.map(t=>{const c=cat(t);const isP=c==='processing';const conf=parseFloat(t.confidence||0);const pct=Math.round(conf*100);const cc=conf>=.85?'var(--green)':conf>=.7?'var(--yel)':'var(--red)';return`<tr class="rh ra${t.fraud_flag?' tf':''}" onclick="sd('${t.ticket_id}')"><td><span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--green)">${t.ticket_id}</span></td><td title="${t.customer||''}">${t.customer||'<span style="color:var(--t3)">Unknown</span>'}</td><td>${tb2(t.tier)}</td><td>${ib(t.intent)}</td><td>${db(t.decision)}</td><td>${rb(t)}</td><td>${isP?`<span class="spin"></span>`:`<div class="cb2"><div class="ck"><div class="cf" style="width:${pct}%;background:${cc}"></div></div><span class="cp">${pct}%</span></div>`}</td><td style="color:var(--t3);font-size:12px;text-align:center;font-family:'DM Mono',monospace">${t.tool_call_count||0}</td><td style="color:var(--t3);font-size:11px;font-family:'DM Mono',monospace">${t.total_ms?t.total_ms.toLocaleString()+'ms':isP?'<span class="spin"></span>':'—'}</td></tr>`;}).join('');}
+function rb(t){const c=cat(t);if(c==='resolved')return`<span class="sb2 so"><span class="sd"></span>Resolved</span>`;if(c==='fraud')return`<span class="sb2 sf"><span class="sd"></span>Fraud caught</span>`;if(c==='escalated')return`<span class="sb2 se"><span class="sd"></span>Escalated</span>`;return`<span class="sb2 sp2"><span class="sd"></span>Processing…</span>`;}
+function tb2(t){const raw=String(t||'').toLowerCase();const l=raw==='1'||raw==='standard'?'Standard':raw==='2'||raw==='premium'?'Premium':raw==='3'||raw==='vip'?'VIP':(t||'Std');const c=l==='VIP'?'pp2':l==='Premium'?'pb2':'pgr';return t?`<span class="pill ${c}" style="font-size:10px">${l}</span>`:'—';}
+function ib(i){if(!i||i==='—')return'—';const m={refund_request:'pr2',return_request:'po2',order_cancellation:'py2',fraud_report:'pr2',billing_issue:'pp2',order_status:'pb2',product_question:'pt2',warranty_claim:'po2',exchange_request:'pt2',general_complaint:'pgr',general_question:'pgr',other:'pgr'};return`<span class="pill ${m[i]||'pgr'}" style="font-size:10px">${i.replace(/_/g,' ')}</span>`;}
+function db(d){if(!d||d==='—')return'—';const m={issue_refund:['pg2','💰 Refund'],approve_return:['pb2','📦 Return'],deny:['pr2','✗ Deny'],cancel_order:['po2','✕ Cancel'],send_reply:['pb2','💬 Reply'],request_info:['pp2','? Info'],escalate:['py2','⬆ Escalate']};const[c,l]=m[d]||['pgr',d.replace(/_/g,' ')];return`<span class="pill ${c}">${l}</span>`;}
+async function sd(id){document.getElementById('mti').textContent=id;document.getElementById('msu').textContent='Loading…';document.getElementById('mbd').innerHTML='<div style="padding:48px;text-align:center"><span class="spin"></span></div>';document.getElementById('modal').classList.add('open');try{const[s,det]=await Promise.all([A('/ticket-status/'+id),A('/ticket-detail/'+id)]);const c=s.fraud_flag?'fraud':s.status==='escalated'?'escalated':s.status==='resolved'?'resolved':'processing';const vm={resolved:{icon:'✅',title:'Ticket resolved — agent took action',desc:rd(s),cls:'resolved'},escalated:{icon:'⬆️',title:'Escalated to human agent',desc:s.escalation_reason||'Requires human review',cls:'escalated'},fraud:{icon:'🚨',title:'Fraud / social engineering blocked',desc:s.fraud_reason||'False claims detected',cls:'fraud'},processing:{icon:'⏳',title:'Currently processing…',desc:'Agent is working through the pipeline',cls:'processing'}};const v=vm[c];document.getElementById('mti').textContent=`${id} — ${s.customer_name||'Unknown'}`;document.getElementById('msu').textContent=s.intent?s.intent.replace(/_/g,' '):'';const conf=parseFloat(s.confidence||0);const pct=Math.round(conf*100);const cc=conf>=.85?'var(--green)':conf>=.7?'var(--yel)':'var(--red)';const events=det.events||[];const ev=events.find(e=>e.event==='ticket_complete')||{};const rt=s.reply||ev.reply_draft||'';document.getElementById('mbd').innerHTML=`<div class="vd ${v.cls}"><div class="vi">${v.icon}</div><div><div class="vti">${v.title}</div><div class="vde">${E(v.desc)}</div></div></div>${rt?`<div class="rb2"><div class="rl3">📧 Reply sent to customer</div><div class="rt">${E(rt)}</div></div>`:''}<div class="dg"><div class="di"><div class="dl">Customer</div><div class="dv">${s.customer_name||'Unknown'}</div></div><div class="di"><div class="dl">Tier</div><div class="dv">${tb2(s.customer_tier)}</div></div><div class="di"><div class="dl">Decision</div><div class="dv">${db(s.decision)}</div></div><div class="di"><div class="dl">Confidence</div><div class="dv"><div class="cb2"><div class="ck" style="min-width:80px"><div class="cf" style="width:${pct}%;background:${cc}"></div></div><span class="cp">${pct}%</span></div></div></div><div class="di"><div class="dl">Action taken</div><div class="dv">${(s.action_taken||'—').replace(/_/g,' ')}</div></div><div class="di"><div class="dl">Tool calls</div><div class="dv">${s.tool_calls||ev.tool_call_count||0}</div></div>${s.refund_id?`<div class="di"><div class="dl">Refund ID</div><div class="dv" style="color:var(--green);font-family:'DM Mono',monospace">${s.refund_id}</div></div>`:''}${s.urgency?`<div class="di"><div class="dl">Urgency</div><div class="dv">${ug(s.urgency)}</div></div>`:''}${s.fraud_flag?`<div class="di" style="grid-column:1/-1;background:var(--rl);border-color:rgba(239,68,68,.2)"><div class="dl" style="color:var(--red)">🚨 Fraud reason</div><div class="dv" style="color:var(--red)">${E(s.fraud_reason||'Social engineering detected')}</div></div>`:''}${c==='escalated'?`<div class="di" style="grid-column:1/-1"><div class="dl">Escalation reason</div><div class="dv" style="color:#92400E">${E(s.escalation_reason||'—')}</div></div>`:''}</div><div class="tlh">Pipeline trace</div>${btl(events,c,ev)}`;
+}catch(e){document.getElementById('mbd').innerHTML=`<div style="color:var(--red);padding:24px">Error: ${e.message}</div>`;}}
+function rd(s){const m={issue_refund:`Refund${s.refund_id?' '+s.refund_id:''} issued to original payment method`,approve_return:'Return approved — RMA instructions sent to customer',deny:'Request denied per policy — explanation sent to customer',cancel_order:'Order cancelled — confirmation sent to customer',send_reply:'Query answered from knowledge base — reply sent',request_info:'Clarifying questions sent — awaiting customer response'};return m[s.decision]||(s.action_taken||'Agent completed processing').replace(/_/g,' ');}
+function btl(events,c,ev){const N=['ingest_ticket','lookup_customer','classify_intent','lookup_order_product','check_policy','decide','act','log_outcome'];if(!events.length)return'<div style="color:var(--t3);font-size:13px">No events yet.</div>';const em={};events.forEach(e=>{if(e.event)em[e.event]=e;});const sc=!!em['customer_not_found'];return N.map((n,i)=>{const sk=sc&&['classify_intent','lookup_order_product','check_policy','decide'].includes(n);const iF=n==='check_policy'&&(em['fraud_detected']||c==='fraud');const dc=sk?'skip':iF?'fraud':'done';let d='';if(n==='ingest_ticket')d='Order IDs extracted, urgency pre-scanned';else if(n==='lookup_customer')d=ev.customer_name?`${ev.customer_name} · tier=${ev.customer_tier||'?'}`:sc?'Unknown customer — short-circuit':'Customer found';else if(n==='classify_intent')d=sk?'SKIPPED':ev.intent?`intent=${ev.intent} · urgency=${ev.urgency||'?'}`:'Classified';else if(n==='lookup_order_product')d=sk?'SKIPPED':'Order and product fetched';else if(n==='check_policy')d=iF?`FRAUD: ${em['fraud_detected']?.reason||'false tier claims'}`:sk?'SKIPPED':'Policy KB searched';else if(n==='decide')d=sk?'SKIPPED':ev.decision?`decision=${ev.decision} · conf=${Math.round((ev.confidence_score||0)*100)}%`:'Decision made';else if(n==='act')d=ev.refund_id?`Refund ${ev.refund_id} issued`:(ev.action_taken||'action taken').replace(/_/g,' ')+' · reply sent';else if(n==='log_outcome')d=ev.tool_call_count!==undefined?`${ev.tool_call_count} tool calls · ${ev.total_ms||0}ms`:'Audit log written';return`<div class="tli"><div class="tld ${dc}">${sk?'—':(i+1)}</div><div style="flex:1;padding-top:3px"><div class="tln" style="${sk?'color:var(--t3)':''}${iF?';color:var(--red)':''}">${n}</div>${d?`<div class="tlde" style="${iF?'color:var(--red)':''}">${d}</div>`:''}</div></div>`;}).join('');}
+function cm(){document.getElementById('modal').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')cm();});
+function toggleSubmit(){const p=document.getElementById('spp');p.style.display=p.style.display==='none'?'block':'none';}
+async function subT(){const e=document.getElementById('fe').value.trim();const s=document.getElementById('fs').value.trim();const b=document.getElementById('fb').value.trim();if(!s||!b){alert('Subject and body required.');return;}try{const d=await A('/ticket',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer_email:e,subject:s,body:b})});alert(`Ticket ${d.ticket_id} submitted!`);['fe','fs','fb'].forEach(i=>document.getElementById(i).value='');toggleSubmit();setTimeout(lh,3000);}catch(e){alert('Error: '+e.message);}}
+function ug(u){const m={critical:'pr2',high:'po2',medium:'py2',low:'pgr'};return u?`<span class="pill ${m[u]||'pgr'}">${u}</span>`:'—';}
+async function A(url,opts={}){const r=await fetch(url,opts);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();}
+function S(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
+function E(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 </script>
 </body>
 </html>
