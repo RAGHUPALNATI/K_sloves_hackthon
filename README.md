@@ -5,7 +5,14 @@
 A production-grade autonomous agent that resolves e-commerce support tickets end-to-end using a multi-step LangGraph reasoning pipeline — with zero human intervention for routine cases.
 
 ---
+## 🌐 Live Demo
 
+[![Live Dashboard](https://img.shields.io/badge/▶%20Live%20Dashboard-Open%20Now-brightgreen?style=for-the-badge)](https://reburial-shun-isolation.ngrok-free.dev/)
+
+**🔗 https://reburial-shun-isolation.ngrok-free.dev/**
+
+> Live demo running on local hardware with Ollama llama3.2 (no external API).
+> Click **Run All 20 Tickets** on the dashboard to watch the agent process all tickets in real time.
 
 
 
