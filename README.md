@@ -1,32 +1,94 @@
 # 🌊 ShopWave — Autonomous Support Resolution Agent
 
-> **Ksolves Agentic AI Hackathon 2026** submission by Raghu Varma Palnati
+> **Ksolves Agentic AI Hackathon 2026**
+> Built by **Raghu Varma Palnati** — B.Tech CSE (AI & ML), Lovely Professional University
 
-A production-grade autonomous agent that resolves e-commerce support tickets end-to-end using a multi-step LangGraph reasoning pipeline — with zero human intervention for routine cases.
+An autonomous AI agent that resolves e-commerce customer support tickets **end-to-end without any human involvement** — issuing refunds, cancelling orders, detecting fraud, and escalating edge cases through an 8-node LangGraph reasoning pipeline.
 
 ---
+
 ## 🌐 Live Demo
 
-[![Live Dashboard](https://img.shields.io/badge/▶%20Live%20Dashboard-Open%20Now-brightgreen?style=for-the-badge)](https://reburial-shun-isolation.ngrok-free.dev/)
+> **Two live links available. If one is not working, please use the other.**
+
+---
+
+### ✅ Primary — Azure VM (24/7, Always On)
+
+[![Open Primary Demo](https://img.shields.io/badge/▶%20Primary%20Demo-Azure%20VM%20%7C%2024%2F7-brightgreen?style=for-the-badge&logo=microsoft-azure)](http://shopwaveksolves.duckdns.org/)
+
+**🔗 http://shopwaveksolves.duckdns.org/**
+
+| Detail | Info |
+|--------|------|
+| 🖥️ Host | Microsoft Azure VM (Ubuntu 22.04) |
+| ⏰ Availability | 24/7 — always on, no laptop needed |
+| 🤖 LLM | Ollama llama3.2 running on the server |
+| 🔑 API Keys | None — fully local LLM, zero cost |
+| 🌍 Domain | DuckDNS custom domain |
+
+---
+
+### 🔵 Backup — ngrok Mirror (Active During Review Period)
+
+[![Open Backup Demo](https://img.shields.io/badge/▶%20Backup%20Demo-ngrok%20Mirror-blue?style=for-the-badge)](https://reburial-shun-isolation.ngrok-free.dev/)
 
 **🔗 https://reburial-shun-isolation.ngrok-free.dev/**
 
-> Live demo running on local hardware with Ollama llama3.2 (no external API).
-> Click **Run All 20 Tickets** on the dashboard to watch the agent process all tickets in real time.
+| Detail | Info |
+|--------|------|
+| 🖥️ Host | Local machine tunnelled via ngrok |
+| ⏰ Availability | Active while laptop is running during review |
+| 🤖 LLM | Ollama llama3.2 running locally |
+| 🔑 API Keys | None — fully local LLM, zero cost |
 
+---
 
+### 💡 How to Use the Dashboard
+
+1. Open either link above
+2. Click **▶ Run All 20 Tickets** to start the agent
+3. Watch all 20 tickets get processed in real time — 🟢 green = resolved, 🟡 yellow = escalated, 🔴 red = fraud caught
+4. Click any ticket row to see the full 8-node pipeline trace, confidence score, decision, and the actual reply sent to the customer
+5. Check the **Resolved / Escalated / Fraud Detected** summary cards at the top
+
+---
 
 ## 🎥 Demo Video
 
-[![ShopWave Demo](https://img.shields.io/badge/▶%20Watch%20Demo-Google%20Drive-blue?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1tNeCfdayiNIlBv0LkVufpOaTq3kRCag8/view?usp=sharing)
+[![Watch Demo](https://img.shields.io/badge/▶%20Watch%20Full%20Demo-Google%20Drive-red?style=for-the-badge&logo=google-drive)](https://drive.google.com/file/d/1tNeCfdayiNIlBv0LkVufpOaTq3kRCag8/view?usp=sharing)
 
-> Click the button above to watch the full 5-minute demo of the ShopWave Autonomous Support Agent processing all 20 tickets live.
+**[▶ Click here to watch the 5-minute demo](https://drive.google.com/file/d/1tNeCfdayiNIlBv0LkVufpOaTq3kRCag8/view?usp=sharing)**
 
-## Architecture in 3 Sentences
-
-Every ticket flows through an **8-node LangGraph pipeline**: ingest → customer lookup → intent classification → order/product lookup → policy check → decision → action → audit. The agent makes a minimum of **3 tool calls per ticket** and reasons explicitly at each step before acting. All 20 tickets are processed **concurrently** using `asyncio.Semaphore`, with a real-time dashboard at `localhost:8000`.
+The demo shows:
+- Live processing of all 20 support tickets
+- Fraud detection catching TKT-018 social engineering attempt
+- Autonomous refund, cancellation, and escalation decisions
+- Real-time dashboard with resolution status per ticket
+- Full audit trail for every decision made
 
 ---
+
+## 🤖 What This Agent Does
+
+Most support teams drown in tickets. A refund decision that should take 3 seconds takes hours because a human has to verify the order, check the policy, cross-reference the customer tier, and write a reply.
+
+ShopWave does all of that autonomously:
+
+- Customer asks for a refund → agent checks the order, verifies the return window, confirms eligibility, **issues the refund and sends a reply** — no human needed
+- Customer claims to be VIP to get special treatment → agent **cross-checks the system**, detects the fraud, and blocks the request
+- Order is still in processing → agent **cancels it immediately** and confirms with the customer
+- Ticket is too complex or refund exceeds $200 → agent **escalates with full context** to a human queue
+
+All 20 tickets processed. Full audit trail. Every decision explained.
+
+---
+
+## 🏗️ Architecture in 3 Sentences
+
+Every ticket flows through an **8-node LangGraph pipeline**: ingest → customer lookup → intent classification → order/product lookup → policy check → decision → action → audit. The agent makes a minimum of **3 tool calls per ticket** and reasons explicitly at each step before acting. All 20 tickets are processed **concurrently** using `asyncio.Semaphore`, with a real-time dashboard available at the live links above.
+
+## Agent Graph
 
 ## Agent Graph
 
